@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Продвинутый Симулятор: ПК и Память компьютера (6 класс)</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Tailwind CSS for Grid and Flex layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mandatory Styling Guardrails */
+        * {
+            font-family: Georgia, serif !important;
+            user-select: none;
+        }
+
+        body {
+            background-color: #E6E6FA;
+            color: #000080;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .main-heading {
+            color: #800000;
+            font-weight: bold;
+        }
+
+        .text-dark-blue {
+            color: #000080;
+        }
+
+        .bg-light-lavender {
+            background-color: #F3EFFA;
+        }
+
+        .border-dark-red {
+            border-color: #800000;
+        }
+
+        .btn-red {
+            background-color: #800000;
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .btn-red:hover {
+            background-color: #600000;
+            transform: translateY(-2px);
+        }
+
+        .btn-red:disabled {
+            background-color: #a37272;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-blue {
+            background-color: #000080;
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .btn-blue:hover {
+            background-color: #000060;
+            transform: translateY(-2px);
+        }
+
+        /* Drag and Drop Slots */
+        .drop-slot {
+            border: 2px dashed #800000;
+            background-color: rgba(243, 239, 250, 0.7);
+            transition: all 0.25s ease;
+        }
+
+        .drop-slot.drag-over {
+            background-color: #d8b4fe;
+            border-style: solid;
+            transform: scale(1.02);
+        }
+
+        .drop-slot.filled {
+            border: 2px solid #16a34a;
+            background-color: #dcfce7;
+        }
+
+        .draggable-item {
+            cursor: grab;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+
+        .draggable-item.placed {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* Certificate Layout */
+        .certificate-border {
+            border: 10px double #800000;
+            background: linear-gradient(135deg, #ffffff 0%, #f3effa 100%);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #E6E6FA;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #800000;
+            border-radius: 4px;
+        }
+
+        @keyframes pulse-success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+        .anim-success {
+            animation: pulse-success 0.3s ease-in-out;
+        }
+
+        @media print {
+            header, button, #start-screen {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+            }
+            #final-screen {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Header / Dashboard Bar -->
+    <header class="bg-white border-b-4 border-dark-red shadow-md p-3 md:p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div>
+                <h1 class="text-xl md:text-2xl main-heading flex items-center gap-2">
+                    <i class="fa-solid fa-microchip"></i>
+                    Эксперт ПК: Сборщик & Знаток Памяти
+                </h1>
+                <p class="text-xs md:text-sm text-dark-blue">
+                    Информатика 6 класс • <span id="user-info-display" class="font-bold text-dark-red">Регистрация не пройдена</span>
+                </p>
+            </div>
+
+            <!-- Dashboard Stats -->
+            <div class="flex items-center gap-3 md:gap-6 bg-light-lavender px-4 py-2 rounded-xl border border-purple-200">
+                <div class="text-center">
+                    <span class="block text-[11px] text-dark-blue font-bold">Уровень</span>
+                    <span id="level-display" class="text-base md:text-lg font-bold text-dark-red">1 / 5</span>
+                </div>
+                <div class="h-7 w-px bg-purple-300"></div>
+                <div class="text-center">
+                    <span class="block text-[11px] text-dark-blue font-bold">Очки</span>
+                    <span id="score-display" class="text-lg md:text-xl font-bold text-dark-blue">0</span>
+                </div>
+                <div class="h-7 w-px bg-purple-300"></div>
+                <div class="text-center">
+                    <span class="block text-[11px] text-dark-blue font-bold"><i class="fa-regular fa-clock"></i> Время</span>
+                    <span id="timer-display" class="text-lg md:text-xl font-bold text-dark-red">20:00</span>
+                </div>
+                <button onclick="togglePause()" id="pause-btn" class="btn-blue text-xs px-2 py-1 rounded">
+                    <i class="fa-solid fa-pause"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Interactive Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center">
+
+        <!-- Registration & Start Screen -->
+        <div id="start-screen" class="bg-white rounded-2xl shadow-xl p-6 md:p-8 border-2 border-purple-200 text-center max-w-3xl mx-auto my-auto">
+            <h2 class="text-2xl md:text-3xl main-heading mb-2">Регистрация Учащегося</h2>
+            <p class="text-dark-blue text-xs md:text-sm mb-6">
+                Введите свои данные для формирования итогового персонального сертификата
+            </p>
+
+            <!-- Registration Form Inputs -->
+            <div class="bg-light-lavender p-5 rounded-2xl border border-purple-200 text-left max-w-xl mx-auto mb-6 space-y-4 shadow-inner">
+                <div>
+                    <label class="block text-xs font-bold text-dark-blue mb-1">
+                        <i class="fa-solid fa-user text-dark-red"></i> Фамилия и Имя ученика <span class="text-red-600">*</span>
+                    </label>
+                    <input type="text" id="student-name" oninput="validateForm()" placeholder="Например: Иванов Арман" 
+                           class="w-full border-2 border-purple-300 rounded-xl p-2.5 text-sm font-bold text-dark-blue outline-none focus:border-red-800 bg-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-dark-blue mb-1">
+                        <i class="fa-solid fa-graduation-cap text-dark-red"></i> Класс <span class="text-red-600">*</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" id="student-class" oninput="validateForm()" placeholder="Например: 6 'А'" 
+                               class="flex-grow border-2 border-purple-300 rounded-xl p-2.5 text-sm font-bold text-dark-blue outline-none focus:border-red-800 bg-white">
+                        
+                        <!-- Quick Class Choice Buttons -->
+                        <div class="flex gap-1">
+                            <button onclick="quickSetClass('6 «А»')" class="btn-blue text-xs px-2.5 rounded-lg font-bold">6 А</button>
+                            <button onclick="quickSetClass('6 «Б»')" class="btn-blue text-xs px-2.5 rounded-lg font-bold">6 Б</button>
+                            <button onclick="quickSetClass('6 «В»')" class="btn-blue text-xs px-2.5 rounded-lg font-bold">6 В</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overview Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-left mb-6 text-xs">
+                <div class="bg-light-lavender p-3 rounded-xl border border-purple-200">
+                    <span class="font-bold text-dark-red block text-sm">Уровень 1</span>
+                    <b>Точная сборка ПК</b> (Строгий порядок + нанесение термопасты!)
+                </div>
+                <div class="bg-light-lavender p-3 rounded-xl border border-purple-200">
+                    <span class="font-bold text-dark-red block text-sm">Уровень 2</span>
+                    <b>Матрица памяти</b> (2D-классификация по 2 критериям)
+                </div>
+                <div class="bg-light-lavender p-3 rounded-xl border border-purple-200">
+                    <span class="font-bold text-dark-red block text-sm">Уровень 3</span>
+                    <b>Скорость & Единицы</b> (Иерархия быстрой памяти + задачи)
+                </div>
+                <div class="bg-light-lavender p-3 rounded-xl border border-purple-200">
+                    <span class="font-bold text-dark-red block text-sm">Уровень 4</span>
+                    <b>IT-Диагностика</b> (Устранение сбоев как инженер)
+                </div>
+                <div class="bg-light-lavender p-3 rounded-xl border border-purple-200 sm:col-span-2 md:col-span-2">
+                    <span class="font-bold text-dark-red block text-sm">Уровень 5</span>
+                    <b>Таза Қазақстан E-Waste</b> (3 контейнера экологической чистки)
+                </div>
+            </div>
+
+            <button id="start-btn" disabled onclick="startGame()" class="btn-red text-lg font-bold px-8 py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 mx-auto">
+                <i class="fa-solid fa-play"></i> Начать испытание
+            </button>
+        </div>
+
+        <!-- LEVEL 1: Strict Sequence PC Assembly -->
+        <div id="level-1" class="hidden flex-grow flex flex-col gap-4">
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-purple-200 flex flex-wrap justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-bold main-heading">Уровень 1: Точная сборка системного блока и термоинтерфейс</h2>
+                    <p class="text-xs text-dark-blue">Соблюдай строгий порядок. Нельзя ставить кулер без нанесения термопасты!</p>
+                </div>
+                <div class="bg-purple-100 text-purple-900 text-xs px-3 py-1.5 rounded-lg font-bold" id="assembly-step-indicator">
+                    Шаг 1 из 8: Установка процессора (CPU)
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
+                <!-- Motherboard Workspace -->
+                <div class="lg:col-span-8 bg-slate-900 rounded-2xl p-5 relative flex flex-col justify-between shadow-2xl border-4 border-slate-700 min-h-[480px]">
+                    <div class="text-emerald-400 font-mono text-[11px] flex items-center justify-between">
+                        <span><i class="fa-solid fa-circuit-board"></i> MOTHERBOARD ATX PRO-Z690</span>
+                        <span id="thermal-paste-status" class="text-amber-400 font-bold">Термопаста: НЕ нанесена</span>
+                    </div>
+
+                    <!-- Motherboard Slots Grid -->
+                    <div class="grid grid-cols-12 gap-3 my-auto pt-2">
+                        <!-- Socket & CPU Slot -->
+                        <div class="col-span-6 border border-emerald-500/40 bg-slate-800/80 p-2 rounded-xl text-center">
+                            <span class="text-[10px] font-bold text-emerald-400 block mb-1">СОКЕТ ЦП & СИСТЕМА ОХЛАЖДЕНИЯ</span>
+                            <div id="slot-cpu-zone" data-accept="cpu_group" class="drop-slot w-full h-28 rounded-lg flex flex-col items-center justify-center p-2 text-center text-xs text-dark-blue font-bold">
+                                <i class="fa-solid fa-microchip text-2xl text-slate-500 mb-1"></i>
+                                Гнездо Процессора
+                            </div>
+                        </div>
+
+                        <!-- RAM Slot -->
+                        <div class="col-span-6 border border-amber-500/40 bg-slate-800/80 p-2 rounded-xl text-center">
+                            <span class="text-[10px] font-bold text-amber-400 block mb-1">СЛОТЫ ОЗУ (DIMM DDR5)</span>
+                            <div id="slot-ram" data-accept="ram" class="drop-slot w-full h-28 rounded-lg flex flex-col items-center justify-center p-2 text-center text-xs text-dark-blue font-bold">
+                                <i class="fa-solid fa-memory text-2xl text-slate-500 mb-1"></i>
+                                Слоты Оперативной памяти
+                            </div>
+                        </div>
+
+                        <!-- GPU Slot -->
+                        <div class="col-span-7 border border-purple-500/40 bg-slate-800/80 p-2 rounded-xl text-center mt-1">
+                            <span class="text-[10px] font-bold text-purple-400 block mb-1">СЛОТ PCI-EXPRESS X16</span>
+                            <div id="slot-gpu" data-accept="gpu" class="drop-slot w-full h-20 rounded-lg flex flex-col items-center justify-center p-2 text-center text-xs text-dark-blue font-bold">
+                                <i class="fa-solid fa-tv text-2xl text-slate-500 mb-1"></i>
+                                Разъем Видеокарты
+                            </div>
+                        </div>
+
+                        <!-- M.2 SSD Slot -->
+                        <div class="col-span-5 border border-blue-500/40 bg-slate-800/80 p-2 rounded-xl text-center mt-1">
+                            <span class="text-[10px] font-bold text-blue-400 block mb-1">СЛОТ M.2 NVMe</span>
+                            <div id="slot-ssd" data-accept="ssd" class="drop-slot w-full h-20 rounded-lg flex flex-col items-center justify-center p-2 text-center text-xs text-dark-blue font-bold">
+                                <i class="fa-solid fa-hard-drive text-2xl text-slate-500 mb-1"></i>
+                                Слот NVMe SSD
+                            </div>
+                        </div>
+
+                        <!-- PSU & Cables Slot -->
+                        <div class="col-span-12 border border-red-500/40 bg-slate-800/80 p-2 rounded-xl text-center mt-1">
+                            <span class="text-[10px] font-bold text-red-400 block mb-1">ОТСЕК БП И ПИТАНИЕ ATX</span>
+                            <div id="slot-power" data-accept="power_group" class="drop-slot w-full h-16 rounded-lg flex flex-col items-center justify-center p-1 text-center text-xs text-dark-blue font-bold">
+                                <i class="fa-solid fa-plug text-xl text-slate-500 mb-1"></i>
+                                Подключение Блока Питания и Кабелей
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parts Drawer -->
+                <div class="lg:col-span-4 bg-white rounded-2xl p-4 shadow-lg border border-purple-200 flex flex-col">
+                    <h3 class="font-bold text-sm main-heading border-b border-purple-200 pb-2 mb-3">Комплектующие:</h3>
+                    <div id="hardware-drawer" class="grid grid-cols-2 gap-2 overflow-y-auto max-h-[420px] pr-1">
+                        <!-- Items rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEVEL 2: 2D Memory Matrix -->
+        <div id="level-2" class="hidden flex-grow flex flex-col gap-4">
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-purple-200">
+                <h2 class="text-lg font-bold main-heading">Уровень 2: Двумерная Матрица Классификации Памяти</h2>
+                <p class="text-xs text-dark-blue">Перетащи карточки устройств в правильную ячейку матрицы.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-grow">
+                <!-- 2x2 Matrix Area -->
+                <div class="lg:col-span-8 bg-white p-4 rounded-2xl border border-purple-200 shadow-md grid grid-cols-2 gap-3">
+                    <!-- Cell 1: Internal + Volatile -->
+                    <div id="matrix-int-vol" data-loc="internal" data-vol="volatile" class="drop-slot rounded-xl p-3 flex flex-col justify-between min-h-[180px]">
+                        <span class="text-xs font-bold text-dark-red border-b border-purple-200 pb-1">1. Внутренняя + Энергозависимая</span>
+                        <div class="matrix-list flex flex-wrap gap-1 mt-2"></div>
+                        <span class="text-[10px] text-gray-500 italic mt-1">Очищается при выключении ПК</span>
+                    </div>
+
+                    <!-- Cell 2: Internal + Non-Volatile -->
+                    <div id="matrix-int-non" data-loc="internal" data-vol="non-volatile" class="drop-slot rounded-xl p-3 flex flex-col justify-between min-h-[180px]">
+                        <span class="text-xs font-bold text-dark-red border-b border-purple-200 pb-1">2. Внутренняя + Энергонезависимая</span>
+                        <div class="matrix-list flex flex-wrap gap-1 mt-2"></div>
+                        <span class="text-[10px] text-gray-500 italic mt-1">Сохраняет данные без тока</span>
+                    </div>
+
+                    <!-- Cell 3: External + Volatile -->
+                    <div id="matrix-ext-vol" data-loc="external" data-vol="volatile" class="drop-slot rounded-xl p-3 flex flex-col justify-between min-h-[180px]">
+                        <span class="text-xs font-bold text-dark-red border-b border-purple-200 pb-1">3. Внешняя + Энергозависимая</span>
+                        <div class="matrix-list flex flex-wrap gap-1 mt-2"></div>
+                        <span class="text-[10px] text-gray-500 italic mt-1">Внешние временные буферы</span>
+                    </div>
+
+                    <!-- Cell 4: External + Non-Volatile -->
+                    <div id="matrix-ext-non" data-loc="external" data-vol="non-volatile" class="drop-slot rounded-xl p-3 flex flex-col justify-between min-h-[180px]">
+                        <span class="text-xs font-bold text-dark-red border-b border-purple-200 pb-1">4. Внешняя + Энергонезависимая</span>
+                        <div class="matrix-list flex flex-wrap gap-1 mt-2"></div>
+                        <span class="text-[10px] text-gray-500 italic mt-1">Переносные диски и флешки</span>
+                    </div>
+                </div>
+
+                <!-- Matrix Cards Drawer -->
+                <div class="lg:col-span-4 bg-white p-4 rounded-2xl border border-purple-200 shadow-md flex flex-col">
+                    <h3 class="font-bold text-xs main-heading mb-2">Карточки памяти для распределения:</h3>
+                    <div id="matrix-cards-drawer" class="flex flex-col gap-2 overflow-y-auto max-h-[380px]">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEVEL 3: Speed Hierarchy & Unit Calculations -->
+        <div id="level-3" class="hidden flex-grow flex flex-col gap-4">
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-purple-200">
+                <h2 class="text-lg font-bold main-heading">Уровень 3: Иерархия Скорости и Расчет Единиц Памяти</h2>
+                <p class="text-xs text-dark-blue">Расставь накопители по скорости и реши 3 задачи на пересчет байтов.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-grow">
+                <!-- Part A: Speed Hierarchy -->
+                <div class="bg-white p-4 rounded-2xl border border-purple-200 shadow-md flex flex-col">
+                    <h3 class="font-bold text-xs main-heading mb-3"><i class="fa-solid fa-gauge-high"></i> Часть А: Иерархия быстродействия</h3>
+                    
+                    <div id="speed-slots-container" class="flex flex-col gap-2 flex-grow">
+                        <div data-speed-rank="1" class="speed-slot drop-slot p-2 rounded-xl flex items-center justify-between text-xs">
+                            <span class="font-bold text-dark-red">1 место (Сверхбыстрая)</span>
+                            <div class="slot-content font-bold text-emerald-700"></div>
+                        </div>
+                        <div data-speed-rank="2" class="speed-slot drop-slot p-2 rounded-xl flex items-center justify-between text-xs">
+                            <span class="font-bold text-dark-red">2 место (Быстрая)</span>
+                            <div class="slot-content font-bold text-emerald-700"></div>
+                        </div>
+                        <div data-speed-rank="3" class="speed-slot drop-slot p-2 rounded-xl flex items-center justify-between text-xs">
+                            <span class="font-bold text-dark-red">3 место (Средняя)</span>
+                            <div class="slot-content font-bold text-emerald-700"></div>
+                        </div>
+                        <div data-speed-rank="4" class="speed-slot drop-slot p-2 rounded-xl flex items-center justify-between text-xs">
+                            <span class="font-bold text-dark-red">4 место (Медленная)</span>
+                            <div class="slot-content font-bold text-emerald-700"></div>
+                        </div>
+                        <div data-speed-rank="5" class="speed-slot drop-slot p-2 rounded-xl flex items-center justify-between text-xs">
+                            <span class="font-bold text-dark-red">5 место (Самая медленная)</span>
+                            <div class="slot-content font-bold text-emerald-700"></div>
+                        </div>
+                    </div>
+
+                    <div id="speed-items-drawer" class="flex flex-wrap gap-2 mt-3 pt-2 border-t border-purple-200">
+                        <!-- Speed Items Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Part B: Unit Calculator Quiz -->
+                <div class="bg-white p-4 rounded-2xl border border-purple-200 shadow-md flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-xs main-heading mb-3"><i class="fa-solid fa-calculator"></i> Часть Б: Пересчет единиц измерения информации</h3>
+                        
+                        <div class="space-y-4 text-xs">
+                            <div class="bg-light-lavender p-3 rounded-xl border border-purple-200">
+                                <label class="font-bold block text-dark-blue mb-1">Задача 1: Сколько Мегабайт (МБ) содержится в 2 Гигабайтах (ГБ)?</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="unit-q1" class="border border-purple-300 p-1.5 rounded w-full text-center font-bold" placeholder="Ответ...">
+                                    <span class="self-center font-bold">МБ</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-light-lavender p-3 rounded-xl border border-purple-200">
+                                <label class="font-bold block text-dark-blue mb-1">Задача 2: Сколько Байт содержится в 1024 Битах?</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="unit-q2" class="border border-purple-300 p-1.5 rounded w-full text-center font-bold" placeholder="Ответ...">
+                                    <span class="self-center font-bold">Байт</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-light-lavender p-3 rounded-xl border border-purple-200">
+                                <label class="font-bold block text-dark-blue mb-1">Задача 3: Сколько Килобайт (КБ) занимает документ размером 3072 Байта?</label>
+                                <div class="flex gap-2">
+                                    <input type="number" id="unit-q3" class="border border-purple-300 p-1.5 rounded w-full text-center font-bold" placeholder="Ответ...">
+                                    <span class="self-center font-bold">КБ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="checkLevel3All()" class="btn-red w-full py-2.5 rounded-xl font-bold mt-4">
+                        Проверить Уровень 3
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEVEL 4: IT Diagnostics Scenario Cases -->
+        <div id="level-4" class="hidden flex-grow flex flex-col gap-4">
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-purple-200">
+                <h2 class="text-lg font-bold main-heading">Уровень 4: Лаборатория IT-Диагностики и Ремонта</h2>
+                <p class="text-xs text-dark-blue">Проанализируй проблему пользователя и выбери верное решение.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-purple-200 shadow-md max-w-2xl mx-auto w-full my-auto text-center">
+                <span id="diag-step-counter" class="text-xs font-bold text-gray-500 uppercase block mb-2">Сценарий 1 из 5</span>
+                
+                <div class="bg-light-lavender border-2 border-purple-300 p-5 rounded-2xl mb-4 text-left">
+                    <div class="flex items-center gap-3 mb-2">
+                        <i class="fa-solid fa-user-gear text-2xl text-dark-red"></i>
+                        <h3 id="diag-title" class="font-bold text-dark-blue text-base">Сбой системных часов</h3>
+                    </div>
+                    <p id="diag-problem" class="text-xs text-gray-700 leading-relaxed">
+                        При включении компьютера каждый раз сбивается дата и время, а настройки BIOS сбрасываются. В чём причина?
+                    </p>
+                </div>
+
+                <div id="diag-options-container" class="grid grid-cols-1 gap-2 text-left text-xs">
+                    <!-- Dynamic Radio / Button Options -->
+                </div>
+            </div>
+        </div>
+
+        <!-- LEVEL 5: Taza Qazaqstan E-Waste & Digital Cleanup -->
+        <div id="level-5" class="hidden flex-grow flex flex-col gap-4">
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-purple-200 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-bold text-emerald-800"><i class="fa-solid fa-leaf text-emerald-600"></i> Уровень 5: «Таза Қазақстан» — Эко и Цифровая Чистка</h2>
+                    <p class="text-xs text-dark-blue">Распредели объекты по 3 контейнерам: Спец-утилизация, Ресайклинг и Цифровая чистка.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 flex-grow">
+                <!-- Container 1: Dangerous E-Waste -->
+                <div id="eco-c1" data-bin="ewaste" class="drop-slot bg-red-50/70 border-2 border-red-500 rounded-2xl p-3 flex flex-col justify-between">
+                    <div class="text-center">
+                        <i class="fa-solid fa-radiation text-3xl text-red-600 mb-1"></i>
+                        <h3 class="font-bold text-xs text-red-900">1. Опасный E-Waste</h3>
+                        <p class="text-[10px] text-red-700">Батарейки, вздутые АКБ, свинцовые детали</p>
+                    </div>
+                    <div class="bin-list min-h-[140px] bg-white/70 rounded-xl p-2 my-2 flex flex-col gap-1"></div>
+                    <span class="text-[10px] text-center text-red-800 font-bold">Спец-утилизация токсинов</span>
+                </div>
+
+                <!-- Container 2: Recycle / Second Life -->
+                <div id="eco-c2" data-bin="recycle" class="drop-slot bg-emerald-50/70 border-2 border-emerald-500 rounded-2xl p-3 flex flex-col justify-between">
+                    <div class="text-center">
+                        <i class="fa-solid fa-recycle text-3xl text-emerald-600 mb-1"></i>
+                        <h3 class="font-bold text-xs text-emerald-900">2. Переработка / Вторая жизнь</h3>
+                        <p class="text-[10px] text-emerald-700">Рабочие детали, металлические корпуса</p>
+                    </div>
+                    <div class="bin-list min-h-[140px] bg-white/70 rounded-xl p-2 my-2 flex flex-col gap-1"></div>
+                    <span class="text-[10px] text-center text-emerald-800 font-bold">Вторичное использование</span>
+                </div>
+
+                <!-- Container 3: Digital Cleaning -->
+                <div id="eco-c3" data-bin="digital" class="drop-slot bg-blue-50/70 border-2 border-blue-500 rounded-2xl p-3 flex flex-col justify-between">
+                    <div class="text-center">
+                        <i class="fa-solid fa-broom text-3xl text-blue-600 mb-1"></i>
+                        <h3 class="font-bold text-xs text-blue-900">3. Цифровая чистка ПК</h3>
+                        <p class="text-[10px] text-blue-700">Удаление спама, кэша, файлового мусора</p>
+                    </div>
+                    <div class="bin-list min-h-[140px] bg-white/70 rounded-xl p-2 my-2 flex flex-col gap-1"></div>
+                    <span class="text-[10px] text-center text-blue-800 font-bold">Очистка диска и ОЗУ</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-3 rounded-xl border border-purple-200">
+                <h3 class="font-bold text-xs main-heading mb-2">Предметы для экологической сортировки:</h3>
+                <div id="eco-items-drawer" class="flex flex-wrap gap-2">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- FINAL SCREEN: Certificate -->
+        <div id="final-screen" class="hidden flex-grow flex flex-col items-center justify-center my-auto">
+            <div class="certificate-border p-6 md:p-8 rounded-3xl max-w-3xl w-full shadow-2xl text-center relative overflow-hidden">
+                <div class="flex justify-between items-center text-xs font-bold text-dark-red mb-2">
+                    <span>КАЗАХСТАН • ШКОЛА ИНФОРМАТИКИ</span>
+                    <span>АКЦИЯ «ТАЗА ҚАЗАҚСТАН»</span>
+                </div>
+
+                <i class="fa-solid fa-award text-5xl text-amber-500 my-2"></i>
+                <h2 class="text-2xl md:text-3xl font-extrabold main-heading uppercase tracking-wide">Сертификат "Мастер ПК и Эко-IT"</h2>
+                <p class="text-xs text-dark-blue italic mb-4">Настоящий сертификат подтверждает прохождение симуляции по информатике</p>
+
+                <!-- Personalized Student Box -->
+                <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 max-w-lg mx-auto text-left text-xs space-y-2 mb-4">
+                    <div class="flex justify-between border-b border-purple-200 pb-1">
+                        <span class="font-bold text-dark-blue">Учащийся:</span>
+                        <span id="cert-student-name" class="font-extrabold text-dark-red">Иванов Иван</span>
+                    </div>
+                    <div class="flex justify-between border-b border-purple-200 pb-1">
+                        <span class="font-bold text-dark-blue">Класс:</span>
+                        <span id="cert-student-class" class="font-bold text-dark-blue">6 "А"</span>
+                    </div>
+                    <div class="flex justify-between border-b border-purple-200 pb-1">
+                        <span class="font-bold text-dark-blue">Итоговые Очки:</span>
+                        <span id="cert-score" class="font-extrabold text-base text-dark-red">0</span>
+                    </div>
+                    <div class="flex justify-between border-b border-purple-200 pb-1">
+                        <span class="font-bold text-dark-blue">Затраченное Время:</span>
+                        <span id="cert-time" class="font-bold text-dark-blue">00:00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-purple-200 pb-1">
+                        <span class="font-bold text-dark-blue">Дата прохождения:</span>
+                        <span id="cert-date" class="font-bold text-dark-blue">02.10.2026</span>
+                    </div>
+                    <div class="flex justify-between pt-1">
+                        <span class="font-bold text-dark-blue">Квалификация:</span>
+                        <span id="cert-rank" class="font-extrabold text-emerald-700">Инженер-Системщик 1 Категории</span>
+                    </div>
+                </div>
+
+                <p id="cert-desc" class="text-xs text-dark-blue max-w-lg mx-auto mb-6 leading-relaxed">
+                    Ученик продемонстрировал знания аппаратного обеспечения, последовательности сборки ПК, термоинтерфейса, структуры памяти и правил экологической утилизации.
+                </p>
+
+                <div class="flex gap-3 justify-center print:hidden">
+                    <button onclick="location.reload()" class="btn-red px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> Начать Заново
+                    </button>
+                    <button onclick="window.print()" class="btn-blue px-5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Печать Сертификата
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Registration Logic
+        let studentName = "";
+        let studentClass = "";
+
+        function validateForm() {
+            studentName = document.getElementById('student-name').value.trim();
+            studentClass = document.getElementById('student-class').value.trim();
+            const startBtn = document.getElementById('start-btn');
+
+            if (studentName.length >= 3 && studentClass.length >= 1) {
+                startBtn.disabled = false;
+            } else {
+                startBtn.disabled = true;
+            }
+        }
+
+        function quickSetClass(val) {
+            document.getElementById('student-class').value = val;
+            validateForm();
+        }
+
+        // Game State Variables
+        let currentLevel = 1;
+        let score = 0;
+        let timerSeconds = 20 * 60;
+        let timerInterval = null;
+        let isPaused = false;
+
+        // Web Audio API Synthesis
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                } else if (type === 'wrong') {
+                    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(130, audioCtx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.22);
+                }
+            } catch(e){}
+        }
+
+        function startGame() {
+            // Update User display info
+            document.getElementById('user-info-display').innerText = `Ученик: ${studentName} | Класс: ${studentClass}`;
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('level-1').classList.remove('hidden');
+
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    timerSeconds--;
+                    updateTimerDisplay();
+                    if (timerSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        finishGame();
+                    }
+                }
+            }, 1000);
+
+            initLevel1();
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pause-btn').innerHTML = isPaused ? 
+                '<i class="fa-solid fa-play"></i>' : '<i class="fa-solid fa-pause"></i>';
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timerSeconds / 60);
+            const s = timerSeconds % 60;
+            document.getElementById('timer-display').innerText = 
+                `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function addScore(pts) {
+            score += pts;
+            if (score < 0) score = 0;
+            document.getElementById('score-display').innerText = score;
+        }
+
+        // LEVEL 1 LOGIC
+        let level1Step = 1; 
+        let thermalPasteApplied = false;
+
+        const hwItems = [
+            { id: "cpu", name: "Процессор (CPU)", step: 1, icon: "fa-microchip", color: "text-emerald-600" },
+            { id: "thermal", name: "Термопаста", step: 2, icon: "fa-eye-dropper", color: "text-amber-600" },
+            { id: "cooler", name: "Кулер Охлаждения", step: 3, icon: "fa-fan", color: "text-cyan-600" },
+            { id: "ram", name: "Модуль ОЗУ DDR5", step: 4, icon: "fa-memory", color: "text-amber-500" },
+            { id: "gpu", name: "Видеокарта (GPU)", step: 5, icon: "fa-tv", color: "text-purple-600" },
+            { id: "ssd", name: "NVMe M.2 SSD", step: 6, icon: "fa-hard-drive", color: "text-blue-600" },
+            { id: "psu", name: "Блок питания (PSU)", step: 7, icon: "fa-plug", color: "text-red-600" },
+            { id: "cables", name: "Кабели питания ATX", step: 8, icon: "fa-network-wired", color: "text-gray-700" }
+        ];
+
+        function initLevel1() {
+            renderHardwareDrawer();
+            setupHardwareDropSlots();
+        }
+
+        function renderHardwareDrawer() {
+            const drawer = document.getElementById('hardware-drawer');
+            drawer.innerHTML = '';
+            hwItems.forEach(item => {
+                const el = document.createElement('div');
+                el.draggable = true;
+                el.id = `hw-${item.id}`;
+                el.dataset.id = item.id;
+                el.dataset.step = item.step;
+                el.className = "draggable-item bg-light-lavender border border-purple-300 p-2 rounded-xl text-center shadow-sm hover:shadow";
+                el.innerHTML = `
+                    <i class="fa-solid ${item.icon} ${item.color} text-2xl mb-1"></i>
+                    <div class="font-bold text-[11px] text-dark-blue">${item.name}</div>
+                `;
+                el.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', item.id));
+                drawer.appendChild(el);
+            });
+        }
+
+        function setupHardwareDropSlots() {
+            const slots = document.querySelectorAll('#level-1 .drop-slot');
+            slots.forEach(slot => {
+                slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+                slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+                slot.addEventListener('drop', e => {
+                    e.preventDefault();
+                    slot.classList.remove('drag-over');
+                    const itemId = e.dataTransfer.getData('text/plain');
+                    const item = hwItems.find(i => i.id === itemId);
+
+                    if (!item) return;
+
+                    if (item.step !== level1Step) {
+                        playSound('wrong');
+                        addScore(-10);
+                        alert(`Ошибка последовательности!\nТекущий шаг: Шаг ${level1Step}. Нельзя ставить ${item.name} раньше времени!`);
+                        return;
+                    }
+
+                    if (item.id === "thermal") {
+                        thermalPasteApplied = true;
+                        document.getElementById('thermal-paste-status').innerText = "Термопаста: НАНЕСЕНА ✓";
+                        document.getElementById('thermal-paste-status').className = "text-emerald-400 font-bold";
+                    }
+
+                    playSound('correct');
+                    addScore(25);
+
+                    document.getElementById(`hw-${item.id}`).classList.add('placed');
+                    
+                    level1Step++;
+                    if (level1Step <= 8) {
+                        const nextItem = hwItems.find(i => i.step === level1Step);
+                        document.getElementById('assembly-step-indicator').innerText = `Шаг ${level1Step} из 8: Установка ${nextItem.name}`;
+                    } else {
+                        setTimeout(() => {
+                            alert("Отлично! Системный блок полностью и правильно собран с соблюдением всех правил! Переходим к Матрице памяти.");
+                            startLevel2();
+                        }, 400);
+                    }
+                });
+            });
+        }
+
+        // LEVEL 2 LOGIC
+        const matrixCards = [
+            { id: "m1", name: "Оперативная память (ОЗУ)", loc: "internal", vol: "volatile" },
+            { id: "m2", name: "Кэш-память L1/L2/L3", loc: "internal", vol: "volatile" },
+            { id: "m3", name: "ПЗУ (BIOS / UEFI)", loc: "internal", vol: "non-volatile" },
+            { id: "m4", name: "Память CMOS (Дата/Время)", loc: "internal", vol: "non-volatile" },
+            { id: "m5", name: "NVMe M.2 SSD", loc: "internal", vol: "non-volatile" },
+            { id: "m6", name: "Жесткий диск (HDD)", loc: "internal", vol: "non-volatile" },
+            { id: "m7", name: "USB-Флешка", loc: "external", vol: "non-volatile" },
+            { id: "m8", name: "Внешний HDD накопитель", loc: "external", vol: "non-volatile" },
+            { id: "m9", name: "Карта памяти MicroSD", loc: "external", vol: "non-volatile" },
+            { id: "m10", name: "Оптический диск DVD-R", loc: "external", vol: "non-volatile" }
+        ];
+
+        let matrixPlaced = 0;
+
+        function startLevel2() {
+            currentLevel = 2;
+            document.getElementById('level-display').innerText = "2 / 5";
+            document.getElementById('level-1').classList.add('hidden');
+            document.getElementById('level-2').classList.remove('hidden');
+
+            renderMatrixDrawer();
+            setupMatrixDropSlots();
+        }
+
+        function renderMatrixDrawer() {
+            const drawer = document.getElementById('matrix-cards-drawer');
+            drawer.innerHTML = '';
+            matrixCards.forEach(card => {
+                const el = document.createElement('div');
+                el.draggable = true;
+                el.id = `card-${card.id}`;
+                el.dataset.id = card.id;
+                el.className = "draggable-item bg-light-lavender border border-purple-300 p-2 rounded-lg text-xs font-bold text-dark-blue flex justify-between items-center";
+                el.innerHTML = `<span>${card.name}</span> <i class="fa-solid fa-grip-vertical text-purple-400"></i>`;
+                el.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', card.id));
+                drawer.appendChild(el);
+            });
+        }
+
+        function setupMatrixDropSlots() {
+            const slots = document.querySelectorAll('#level-2 .drop-slot');
+            slots.forEach(slot => {
+                slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+                slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+                slot.addEventListener('drop', e => {
+                    e.preventDefault();
+                    slot.classList.remove('drag-over');
+                    const cardId = e.dataTransfer.getData('text/plain');
+                    const card = matrixCards.find(c => c.id === cardId);
+
+                    if (!card) return;
+
+                    const expectedLoc = slot.dataset.loc;
+                    const expectedVol = slot.dataset.vol;
+
+                    if (card.loc === expectedLoc && card.vol === expectedVol) {
+                        playSound('correct');
+                        addScore(20);
+                        
+                        const cardEl = document.getElementById(`card-${card.id}`);
+                        cardEl.draggable = false;
+                        cardEl.className = "bg-emerald-100 text-emerald-900 border border-emerald-300 p-1 rounded text-[10px] font-bold";
+                        slot.querySelector('.matrix-list').appendChild(cardEl);
+
+                        matrixPlaced++;
+                        if (matrixPlaced === matrixCards.length) {
+                            setTimeout(() => {
+                                alert("Матрица памяти заполнена без ошибок! Переходим к Иерархии скорости.");
+                                startLevel3();
+                            }, 400);
+                        }
+                    } else {
+                        playSound('wrong');
+                        addScore(-5);
+                        alert(`Ошибка классификации!\nУстройство "${card.name}" не принадлежит этой ячейке.`);
+                    }
+                });
+            });
+        }
+
+        // LEVEL 3 LOGIC
+        const speedItems = [
+            { id: "s1", name: "Регистры / Кэш L1 ЦП", rank: 1 },
+            { id: "s2", name: "ОЗУ (DDR5 RAM)", rank: 2 },
+            { id: "s3", name: "NVMe M.2 SSD", rank: 3 },
+            { id: "s4", name: "SATA HDD Диск", rank: 4 },
+            { id: "s5", name: "USB 3.0 Флешка", rank: 5 }
+        ];
+
+        function startLevel3() {
+            currentLevel = 3;
+            document.getElementById('level-display').innerText = "3 / 5";
+            document.getElementById('level-2').classList.add('hidden');
+            document.getElementById('level-3').classList.remove('hidden');
+
+            renderSpeedDrawer();
+            setupSpeedDropSlots();
+        }
+
+        function renderSpeedDrawer() {
+            const drawer = document.getElementById('speed-items-drawer');
+            drawer.innerHTML = '';
+            speedItems.forEach(item => {
+                const el = document.createElement('div');
+                el.draggable = true;
+                el.id = `speed-${item.id}`;
+                el.dataset.id = item.id;
+                el.className = "draggable-item bg-light-lavender border border-purple-300 px-3 py-1.5 rounded-lg text-xs font-bold text-dark-blue";
+                el.innerText = item.name;
+                el.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', item.id));
+                drawer.appendChild(el);
+            });
+        }
+
+        function setupSpeedDropSlots() {
+            const slots = document.querySelectorAll('#level-3 .speed-slot');
+            slots.forEach(slot => {
+                slot.addEventListener('dragover', e => e.preventDefault());
+                slot.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const itemId = e.dataTransfer.getData('text/plain');
+                    const item = speedItems.find(s => s.id === itemId);
+
+                    if (!item) return;
+
+                    const slotRank = parseInt(slot.dataset.speedRank);
+                    if (item.rank === slotRank) {
+                        playSound('correct');
+                        addScore(15);
+                        slot.querySelector('.slot-content').innerText = item.name;
+                        document.getElementById(`speed-${item.id}`).classList.add('hidden');
+                    } else {
+                        playSound('wrong');
+                        addScore(-5);
+                        alert("Неверный ранг скорости!");
+                    }
+                });
+            });
+        }
+
+        function checkLevel3All() {
+            const q1 = parseInt(document.getElementById('unit-q1').value);
+            const q2 = parseInt(document.getElementById('unit-q2').value);
+            const q3 = parseInt(document.getElementById('unit-q3').value);
+
+            let correctCount = 0;
+            if (q1 === 2048) correctCount++;
+            if (q2 === 128) correctCount++;
+            if (q3 === 3) correctCount++;
+
+            if (correctCount === 3) {
+                playSound('correct');
+                addScore(50);
+                alert("Все расчеты выполнены идеально! Переходим к Лаборатории Диагностики.");
+                startLevel4();
+            } else {
+                playSound('wrong');
+                addScore(-10);
+                alert(`Проверено задач: ${correctCount}/3 верно.\nПодсказки:\n1 ГБ = 1024 МБ\n1 Байт = 8 Бит\n1 КБ = 1024 Байта`);
+            }
+        }
+
+        // LEVEL 4 LOGIC
+        const diagScenarios = [
+            {
+                title: "Сбой системного времени",
+                problem: "При включении компьютера каждый раз сбивается дата и время, а BIOS просит сбросить настройки.",
+                options: [
+                    { text: "Заменить батарейку CR2032 памяти CMOS", correct: true },
+                    { text: "Заменить оперативную память ОЗУ", correct: false },
+                    { text: "Поменять жесткий диск", correct: false }
+                ]
+            },
+            {
+                title: "Зависание при многозадачности",
+                problem: "При открытии 25 вкладок в браузере ПК начитает резко тормозить.",
+                options: [
+                    { text: "Не хватает объема Оперативной памяти (ОЗУ)", correct: true },
+                    { text: "Сломался блок питания", correct: false },
+                    { text: "Переполнен кэш процессора", correct: false }
+                ]
+            },
+            {
+                title: "Медленная загрузка системы",
+                problem: "Компьютер загружает Windows почти 4 минуты, а программы открываются очень долго со слышимым треском.",
+                options: [
+                    { text: "Заменить устаревший HDD на быстрый NVMe SSD", correct: true },
+                    { text: "Поставить больше кулеров", correct: false },
+                    { text: "Заменить материнскую плату", correct: false }
+                ]
+            },
+            {
+                title: "Перегрев и выключение ПК",
+                problem: "Через 5 минут после запуска игры компьютер резко выключается, а радиатор кулера очень горячий.",
+                options: [
+                    { text: "Заменить засохшую термопасту и очистить кулер", correct: true },
+                    { text: "Увеличить размер файла подкачки", correct: false },
+                    { text: "Переустановить операционную систему", correct: false }
+                ]
+            },
+            {
+                title: "Потеря несохраненного документа",
+                problem: "Пользователь набрал текст в Word, но выключили свет. Документ пропал. В какой памяти он находился?",
+                options: [
+                    { text: "В энергозависимой оперативной памяти (ОЗУ)", correct: true },
+                    { text: "В постоянной памяти ПЗУ", correct: false },
+                    { text: "На флеш-накопителе", correct: false }
+                ]
+            }
+        ];
+
+        let diagIndex = 0;
+
+        function startLevel4() {
+            currentLevel = 4;
+            document.getElementById('level-display').innerText = "4 / 5";
+            document.getElementById('level-3').classList.add('hidden');
+            document.getElementById('level-4').classList.remove('hidden');
+
+            renderDiagScenario();
+        }
+
+        function renderDiagScenario() {
+            if (diagIndex >= diagScenarios.length) {
+                alert("Диагностика завершена! Все поломки устранены. Переходим к Эко-этапу 'Таза Қазақстан'.");
+                startLevel5();
+                return;
+            }
+
+            const sc = diagScenarios[diagIndex];
+            document.getElementById('diag-step-counter').innerText = `Сценарий ${diagIndex + 1} из ${diagScenarios.length}`;
+            document.getElementById('diag-title').innerText = sc.title;
+            document.getElementById('diag-problem').innerText = sc.problem;
+
+            const optsContainer = document.getElementById('diag-options-container');
+            optsContainer.innerHTML = '';
+
+            sc.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "btn-blue p-3 rounded-xl text-left font-bold hover:bg-blue-900 transition";
+                btn.innerText = `${idx + 1}. ${opt.text}`;
+                btn.onclick = () => {
+                    if (opt.correct) {
+                        playSound('correct');
+                        addScore(25);
+                    } else {
+                        playSound('wrong');
+                        addScore(-5);
+                        alert("Неверное решение инженерной проблемы!");
+                    }
+                    diagIndex++;
+                    renderDiagScenario();
+                };
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        // LEVEL 5 LOGIC
+        const ecoItems = [
+            { id: "e1", name: "Вздувшийся Li-Ion аккумулятор", bin: "ewaste" },
+            { id: "e2", name: "Ртутная лампа подсветки старого монитора", bin: "ewaste" },
+            { id: "e3", name: "Свинцовые батареи ИБП", bin: "ewaste" },
+            { id: "e4", name: "Рабочие планки DDR3 для передачи в школу", bin: "recycle" },
+            { id: "e5", name: "Металлический корпус системного блока", bin: "recycle" },
+            { id: "e6", name: "Кэш браузера и временные файлы .tmp", bin: "digital" },
+            { id: "e7", name: "Файлы-дубликаты и спам в почте", bin: "digital" }
+        ];
+
+        let ecoPlaced = 0;
+
+        function startLevel5() {
+            currentLevel = 5;
+            document.getElementById('level-display').innerText = "5 / 5";
+            document.getElementById('level-4').classList.add('hidden');
+            document.getElementById('level-5').classList.remove('hidden');
+
+            renderEcoDrawer();
+            setupEcoDropSlots();
+        }
+
+        function renderEcoDrawer() {
+            const drawer = document.getElementById('eco-items-drawer');
+            drawer.innerHTML = '';
+            ecoItems.forEach(item => {
+                const el = document.createElement('div');
+                el.draggable = true;
+                el.id = `eco-${item.id}`;
+                el.dataset.id = item.id;
+                el.className = "draggable-item bg-light-lavender border border-purple-300 px-3 py-1.5 rounded-lg text-xs font-bold text-dark-blue";
+                el.innerText = item.name;
+                el.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', item.id));
+                drawer.appendChild(el);
+            });
+        }
+
+        function setupEcoDropSlots() {
+            const bins = document.querySelectorAll('#level-5 .drop-slot');
+            bins.forEach(bin => {
+                bin.addEventListener('dragover', e => e.preventDefault());
+                bin.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const itemId = e.dataTransfer.getData('text/plain');
+                    const item = ecoItems.find(i => i.id === itemId);
+
+                    if (!item) return;
+
+                    if (item.bin === bin.dataset.bin) {
+                        playSound('correct');
+                        addScore(20);
+                        
+                        const itemEl = document.getElementById(`eco-${item.id}`);
+                        itemEl.draggable = false;
+                        itemEl.className = "bg-emerald-100 text-emerald-800 p-1 rounded text-[10px] font-bold";
+                        bin.querySelector('.bin-list').appendChild(itemEl);
+
+                        ecoPlaced++;
+                        if (ecoPlaced === ecoItems.length) {
+                            setTimeout(() => {
+                                finishGame();
+                            }, 500);
+                        }
+                    } else {
+                        playSound('wrong');
+                        addScore(-5);
+                        alert("Неправильный контейнер утилизации!");
+                    }
+                });
+            });
+        }
+
+        // FINISH & CERTIFICATE LOGIC
+        function finishGame() {
+            clearInterval(timerInterval);
+            document.getElementById('level-5').classList.add('hidden');
+            document.getElementById('final-screen').classList.remove('hidden');
+
+            const totalSpent = (20 * 60) - timerSeconds;
+            const m = Math.floor(totalSpent / 60);
+            const s = totalSpent % 60;
+
+            // Fill Student Certificate Details
+            document.getElementById('cert-student-name').innerText = studentName;
+            document.getElementById('cert-student-class').innerText = studentClass;
+            document.getElementById('cert-score').innerText = score;
+            document.getElementById('cert-time').innerText = `${m} мин ${s} сек`;
+            
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ru-RU');
+            document.getElementById('cert-date').innerText = dateStr;
+
+            let rank = "Системный Инженер 1 Категории";
+            if (score < 200) rank = "Младший Специалист ПК";
+            else if (score < 350) rank = "Сертифицированный IT-Мастер";
+
+            document.getElementById('cert-rank').innerText = rank;
+        }
+    </script>
+</body>
+</html>
